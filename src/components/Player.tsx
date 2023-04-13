@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 
 type Props = {
-    selectedSongId: string;
+    selectedSongId: number | null;
     selectedSongTags: Object[];
 }
 const Player = ({selectedSongId, selectedSongTags}: Props): JSX.Element => {
@@ -24,7 +24,6 @@ const Player = ({selectedSongId, selectedSongTags}: Props): JSX.Element => {
     const handleEnd = (): void => {
         setProgress(0);
         setIsPlaying(false);
-        console.log('Playback ended.');
         setIsPlaying(true);
         handlePlay();
     };
@@ -35,6 +34,7 @@ const Player = ({selectedSongId, selectedSongTags}: Props): JSX.Element => {
         const x: number = event.clientX - div.offsetLeft;
         const width: number = div.offsetWidth;
         if (audioRef.current) {
+            console.log(audioRef.current.currentTime = x * audioRef.current.duration / width)
             audioRef.current.currentTime = x * audioRef.current.duration / width;
         }
     };

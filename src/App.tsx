@@ -4,10 +4,10 @@ import axios from 'axios';
 
 const App = () => {
     const [songActive, setSongActive] = useState<boolean>(false);
-    const [selectedSongId, setSelectedSongId] = useState<string>("");
+    const [selectedSongId, setSelectedSongId] = useState<number | null>(null);
     const [selectedSongTags, setSelectedSongTags] = useState<Object[]>([]);
 
-    const [songList, setSongList] = useState([]);
+    const [songList, setSongList] = useState<any[]>([]);
 
     useEffect(() => {
         axios.get(`${import.meta.env.VITE_API_URL}/music`).then((response) => {
@@ -24,7 +24,7 @@ const App = () => {
                             key={song.index}
                             className="song-container"
                             onClick={async () => {
-                                setSelectedSongId(song.index.toString());
+                                setSelectedSongId(song.index);
                                 const tags = await axios.get<any[]>(`${import.meta.env.VITE_API_URL}/music/infos/${song.index}`);
                                 setSelectedSongTags(tags.data);
                                 setSongActive(true);
