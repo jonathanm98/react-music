@@ -14,6 +14,7 @@ const App = () => {
             setSongList(response.data);
         });
     }, []);
+
     return (
         <div className="main-container">
             <h1>Spotify clone</h1>

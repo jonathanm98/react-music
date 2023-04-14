@@ -1,4 +1,5 @@
-import {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
+import {formatTime} from "../utils";
 
 type Props = {
     selectedSongId: number | null;
@@ -8,6 +9,7 @@ const Player = ({selectedSongId, selectedSongTags}: Props): JSX.Element => {
     const [isPlaying, setIsPlaying] = useState<boolean>(true);
     const [progress, setProgress] = useState<number>(0);
     const audioRef = useRef<HTMLAudioElement>(null);
+    const [newTime, setNewTime] = useState<number>(0);
 
     const handlePlay = (): void => {
         if (audioRef.current) {
@@ -23,7 +25,6 @@ const Player = ({selectedSongId, selectedSongTags}: Props): JSX.Element => {
 
     const handleEnd = (): void => {
         setProgress(0);
-        setIsPlaying(false);
         setIsPlaying(true);
         handlePlay();
     };
@@ -31,23 +32,39 @@ const Player = ({selectedSongId, selectedSongTags}: Props): JSX.Element => {
 
     const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>): void => {
         const div: EventTarget & HTMLDivElement = event.currentTarget;
-        const x: number = event.clientX - div.offsetLeft;
         const width: number = div.offsetWidth;
+        const x: number = event.clientX - div.offsetLeft;
         if (audioRef.current) {
-            console.log(audioRef.current.currentTime = x * audioRef.current.duration / width)
-            audioRef.current.currentTime = x * audioRef.current.duration / width;
+            setIsPlaying(false);
+            const newTime = x * audioRef.current.duration / width;
+            console.log(x * audioRef.current.duration / width)
+
+            const handleMouseMove = (event: MouseEvent): void => {
+                const x: number = event.clientX - div.offsetLeft;
+                audioRef.current.currentTime = x * audioRef.current.duration / width;
+            };
+
+            const handleMouseUp = (): void => {
+                audioRef.current && (audioRef.current.currentTime = newTime);
+                setIsPlaying(true);
+                document.removeEventListener("mousemove", handleMouseMove);
+                document.removeEventListener("mouseup", handleMouseUp);
+            };
+
+            document.addEventListener("mousemove", handleMouseMove);
+            document.addEventListener("mouseup", handleMouseUp);
         }
     };
 
     useEffect(() => {
         if (audioRef.current) {
             audioRef.current.volume = 0.5;
-            audioRef.current.play();
+            if (isPlaying) audioRef.current.play();
+            else audioRef.current.pause();
         }
     }, [isPlaying]);
 
     useEffect(() => {
-        console.log(selectedSongTags)
         if (audioRef.current) {
             audioRef.current.volume = 0.5;
             audioRef.current.currentTime = 0;
@@ -89,6 +106,7 @@ const Player = ({selectedSongId, selectedSongTags}: Props): JSX.Element => {
                 <div className="bottom-part">
                     <div onMouseDown={handleMouseDown} className="progress-bar"
                          style={{width: "80vw", height: "3px", padding: "10px 0", backgroundColor: "#484747"}}>
+                        <p>{audioRef.current && formatTime(Math.floor(audioRef.current.currentTime))}</p>
                         <div className="progress"
                              style={{width: `${progress}%`, height: "100%", backgroundColor: "#ffffff"}}></div>
                     </div>
