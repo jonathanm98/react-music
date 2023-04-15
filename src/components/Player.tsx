@@ -127,8 +127,8 @@ const Player = ({selectedSongId, selectedSongTags}: Props): JSX.Element => {
                                      }}/>
                             </div>
                         </div>
-                        <p>{audioRef.current && formatTime(audioRef.current.currentTime)}</p>
-                        <p>{audioRef.current && audioRef.current?.duration ? formatTime(audioRef.current.duration) : "0.00"}</p>
+                        <p>{audioRef.current && formatTime(Math.floor(audioRef.current.currentTime))}</p>
+                        <p>{audioRef.current && audioRef.current?.duration ? formatTime(Math.floor(audioRef.current.duration)) : "0.00"}</p>
                     </div>
                 </div>
                 <div className="audio-miscs">
