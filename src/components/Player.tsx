@@ -6,117 +6,137 @@ type Props = {
     selectedSongTags: Object[];
 }
 const Player = ({selectedSongId, selectedSongTags}: Props): JSX.Element => {
-    const [isPlaying, setIsPlaying] = useState<boolean>(true);
-    const [progress, setProgress] = useState<number>(0);
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const [newTime, setNewTime] = useState<number>(0);
+        const [isPlaying, setIsPlaying] = useState<boolean>(false);
+        const [progress, setProgress] = useState<number>(0);
+        const audioRef = useRef<HTMLAudioElement>(null);
+        const progressRef = useRef<HTMLDivElement>(null);
 
-    const handlePlay = (): void => {
-        if (audioRef.current) {
-            setIsPlaying(!isPlaying);
+
+        const handlePlay = (): void => {
+            console.log("play")
+            if (audioRef.current) {
+                audioRef.current.play().then(() => setIsPlaying(true));
+            }
+        };
+
+        const handlePause = (): void => {
+            console.log("pause")
+            if (audioRef.current) {
+                audioRef.current.pause();
+                setIsPlaying(false);
+            }
         }
-    };
 
-    const handleTimeUpdate = (): void => {
-        if (audioRef.current) {
-            setProgress(audioRef.current.currentTime * 100 / audioRef.current.duration);
-        }
-    };
+        const handleTimeUpdate = (): void => {
+            if (audioRef.current) {
+                setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+            }
+        };
 
-    const handleEnd = (): void => {
-        setProgress(0);
-        setIsPlaying(true);
-        handlePlay();
-    };
+        const handleEnd = (): void => {
+            console.log("end")
+            if (audioRef.current) {
+                setIsPlaying(false);
+            }
+        };
 
+        const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
+            if (audioRef.current) {
+                // Arrêter la lecture de l'audio
+                audioRef.current.pause();
+                setIsPlaying(false);
 
-    const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>): void => {
-        const div: EventTarget & HTMLDivElement = event.currentTarget;
-        const width: number = div.offsetWidth;
-        const x: number = event.clientX - div.offsetLeft;
-        if (audioRef.current) {
-            setIsPlaying(false);
-            const newTime = x * audioRef.current.duration / width;
-            console.log(x * audioRef.current.duration / width)
+                const width = progressRef.current!.clientWidth;
+                const clickX = e.nativeEvent.offsetX;
+                const duration = audioRef.current.duration;
+                let newTime = (clickX / width) * duration;
 
-            const handleMouseMove = (event: MouseEvent): void => {
-                const x: number = event.clientX - div.offsetLeft;
-                audioRef.current.currentTime = x * audioRef.current.duration / width;
-            };
+                // Mettre à jour la position de lecture de l'audio au clic initial
+                setProgress((newTime / duration) * 100);
 
-            const handleMouseUp = (): void => {
-                audioRef.current && (audioRef.current.currentTime = newTime);
-                setIsPlaying(true);
-                document.removeEventListener("mousemove", handleMouseMove);
-                document.removeEventListener("mouseup", handleMouseUp);
-            };
+                // Écouter les événements "mousemove" et "mouseup" sur la fenêtre pour continuer la mise à jour de la position de lecture
+                const handleMouseMove = (e: MouseEvent) => {
+                    const newX = e.clientX - progressRef.current!.getBoundingClientRect().left;
+                    newTime = (newX / width) * duration;
+                    setProgress((newTime / duration) * 100);
+                };
 
-            document.addEventListener("mousemove", handleMouseMove);
-            document.addEventListener("mouseup", handleMouseUp);
-        }
-    };
+                const handleMouseUp = () => {
+                    window.removeEventListener("mousemove", handleMouseMove);
+                    window.removeEventListener("mouseup", handleMouseUp);
+                    console.log(newTime)
+                    audioRef.current!.currentTime = newTime;
+                    audioRef.current!.play().then(() => setIsPlaying(true));
+                };
 
-    useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.volume = 0.5;
-            if (isPlaying) audioRef.current.play();
-            else audioRef.current.pause();
-        }
-    }, [isPlaying]);
-
-    useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.volume = 0.5;
-            audioRef.current.currentTime = 0;
-            audioRef.current.play();
-            setIsPlaying(true);
-        }
-    }, [selectedSongId]);
+                window.addEventListener("mousemove", handleMouseMove);
+                window.addEventListener("mouseup", handleMouseUp);
+            }
+        };
 
 
-    return (
-        <>
-            <audio
-                preload="auto"
-                ref={audioRef}
-                src={"http://localhost:3000/music/stream/" + selectedSongId}
-                onCanPlayThrough={handleTimeUpdate}
-                onTimeUpdate={handleTimeUpdate}
-                onEnded={handleEnd}
-            />
-            <div className="audio-infos"></div>
-            <div className="audio-controls">
-                <div className="top-part">
-                    <button onClick={handlePlay}>
-                        <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16"
-                             data-encore-id="icon">
-                            {
-                                isPlaying ?
-                                    <path
-                                        d="M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7H2.7zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-2.6z"></path>
-                                    :
-                                    <path
-                                        d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"></path>
-                            }
-                        </svg>
+        useEffect((): void => {
+            console.log("useEffect")
+            if (audioRef.current) {
+                setIsPlaying(false);
+                audioRef.current.load();
+                audioRef.current.volume = 0.5;
+            }
+        }, [selectedSongId])
 
-                    </button>
-                </div>
 
-                <div className="bottom-part">
-                    <div onMouseDown={handleMouseDown} className="progress-bar"
-                         style={{width: "80vw", height: "3px", padding: "10px 0", backgroundColor: "#484747"}}>
+        return (
+            <>
+                <audio
+                    ref={audioRef}
+                    preload="auto"
+                    src={"http://localhost:3000/music/stream/" + selectedSongId}
+                    onLoadedMetadata={handlePlay}
+                    onTimeUpdate={handleTimeUpdate}
+                    onEnded={handleEnd}
+                />
+                <div className="audio-infos"></div>
+                <div className="audio-controls">
+                    <div className="top-part">
+                        <button onClick={isPlaying ? handlePause : handlePlay}>
+                            <svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16"
+                                 data-encore-id="icon">
+                                {
+                                    isPlaying ?
+                                        <path
+                                            d="M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7H2.7zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-2.6z"></path>
+                                        :
+                                        <path
+                                            d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"></path>
+                                }
+                            </svg>
+
+                        </button>
+                    </div>
+
+                    <div className="bottom-part">
+                        <div onMouseDown={handleMouseDown} className="progress-bar-container"
+                             style={{width: "80vw", height: "3px", padding: "10px 0"}}>
+                            <div ref={progressRef} style={{width: "100%", height: "100%", backgroundColor: "#484747"}}
+                                 className="progress-bar">
+                                <div className="progress"
+                                     style={{
+                                         width: `${progress}%`,
+                                         height: "100%",
+                                         backgroundColor: "#ffffff",
+                                     }}/>
+                            </div>
+                        </div>
                         <p>{audioRef.current && formatTime(Math.floor(audioRef.current.currentTime))}</p>
-                        <div className="progress"
-                             style={{width: `${progress}%`, height: "100%", backgroundColor: "#ffffff"}}></div>
+                        <p>{audioRef.current && audioRef.current?.duration ? formatTime(Math.floor(audioRef.current.duration)) : "0.00"}</p>
                     </div>
                 </div>
-            </div>
-            <div className="audio-miscs">
+                <div className="audio-miscs">
 
-            </div>
-        </>
-    );
-};
+                </div>
+            </>
+        );
+    }
+;
 
 export default Player;
